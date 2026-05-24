@@ -469,6 +469,8 @@ client.on("messageCreate", async message => {
       .then(msg => setTimeout(() => msg.delete().catch(() => {}), 3000));
   }
 
+});
+
 if (!process.env.DISCORD_TOKEN) {
   console.error("Erreur : variable DISCORD_TOKEN manquante dans Railway.");
   process.exit(1);
