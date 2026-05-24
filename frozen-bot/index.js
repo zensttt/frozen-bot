@@ -939,6 +939,7 @@ client.on("messageCreate", async message => {
             "`!add ID` → ajoute quelqu’un au ticket",
             "`!staffstats` → stats staff",
             "`!giveaway op` → créer un giveaway",
+            "`!cancelgiveaway ID` → annuler un giveaway",
             "`!statut` → statut du bot",
             "`!help` / `!aide` → aide"
           ].join("\n")
