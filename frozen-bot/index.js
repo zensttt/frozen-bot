@@ -37,6 +37,20 @@ const spamMap = new Map();
 const joinRaidMap = new Map();
 const ticketActivity = new Map();
 
+const giveaways = new Map();
+
+function parseGiveawayDate(input) {
+  const date = new Date(input);
+  if (isNaN(date.getTime())) return null;
+  return date;
+}
+
+function pickWinners(participants, count) {
+  const shuffled = [...participants].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+
 function loadStats() {
   try {
     if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, "{}");
@@ -466,7 +480,8 @@ client.on("messageCreate", async message => {
         "`!staffstats` → stats du staff",
         "`!staffstats @membre` → stats d’un staff",
         "`!statut` → statut du bot",
-        "`!help` → affiche cette aide"
+        "`!help` → affiche cette aide",
+        "`!giveaway op` → créer un giveaway interactif"
       ].join("\n"))]
     });
   }
@@ -554,8 +569,62 @@ client.on("messageCreate", async message => {
         `🔒 Tickets fermés : **${stats.closed || 0}**`,
         `📋 Formulaires : **${stats.recruitForms || 0}**`
       ].join("\n"))]
-    });
+      if (command === "giveaway") {
+
+  if (args[0] !== "op") {
+    return message.reply("Utilisation : !giveaway op");
   }
+
+  const allowed =
+    config.giveaway.allowedRoles.some(roleName =>
+      message.member.roles.cache.some(r => r.name === roleName)
+    );
+
+  if (!allowed) {
+    return message.reply("❌ Permission refusée.");
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId("giveaway_create")
+    .setTitle("Créer un giveaway");
+
+  const endDate =
+    new TextInputBuilder()
+      .setCustomId("endDate")
+      .setLabel("Date de fin")
+      .setPlaceholder("2026-05-30 20:00")
+      .setStyle(TextInputStyle.Short);
+
+  const winners =
+    new TextInputBuilder()
+      .setCustomId("winners")
+      .setLabel("Nombre de gagnants")
+      .setStyle(TextInputStyle.Short);
+
+  const prize =
+    new TextInputBuilder()
+      .setCustomId("prize")
+      .setLabel("Lot à gagner")
+      .setStyle(TextInputStyle.Short);
+
+  const description =
+    new TextInputBuilder()
+      .setCustomId("description")
+      .setLabel("Description")
+      .setStyle(TextInputStyle.Paragraph);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(endDate),
+    new ActionRowBuilder().addComponents(winners),
+    new ActionRowBuilder().addComponents(prize),
+    new ActionRowBuilder().addComponents(description)
+  );
+
+  return await message.reply({
+    content: "❌ Les modals ne fonctionnent pas avec les messages.\nTape `/` plus tard si tu veux un vrai slash command."
+  });
+}
+  
 });
 
 client.on("messageDelete", async message => {
@@ -654,5 +723,164 @@ if (!process.env.DISCORD_TOKEN) {
   console.error("Erreur : variable DISCORD_TOKEN manquante dans Railway.");
   process.exit(1);
 }
+
+client.on("interactionCreate", async interaction => {
+  try {
+
+    if (interaction.isButton()) {
+
+      if (interaction.customId.startsWith("giveaway_join_")) {
+
+        const giveawayId = interaction.customId.replace("giveaway_join_", "");
+        const data = giveaways.get(giveawayId);
+
+        if (!data) {
+          return interaction.reply({
+            content: "❌ Giveaway terminé.",
+            ephemeral: true
+          });
+        }
+
+        if (Date.now() >= data.endAt) {
+          return interaction.reply({
+            content: "❌ Giveaway terminé.",
+            ephemeral: true
+          });
+        }
+
+        data.participants.add(interaction.user.id);
+
+        return interaction.reply({
+          content: "✅ Participation enregistrée.",
+          ephemeral: true
+        });
+      }
+    }
+
+    if (interaction.isModalSubmit()) {
+
+      if (interaction.customId === "giveaway_create") {
+
+        const endDateInput = interaction.fields.getTextInputValue("endDate");
+        const winnersInput = interaction.fields.getTextInputValue("winners");
+        const prize = interaction.fields.getTextInputValue("prize");
+        const description = interaction.fields.getTextInputValue("description");
+
+        const endDate = parseGiveawayDate(endDateInput);
+
+        if (!endDate) {
+          return interaction.reply({
+            content: "❌ Date invalide.",
+            ephemeral: true
+          });
+        }
+
+        const winnersCount = parseInt(winnersInput);
+
+        if (isNaN(winnersCount) || winnersCount <= 0) {
+          return interaction.reply({
+            content: "❌ Nombre de gagnants invalide.",
+            ephemeral: true
+          });
+        }
+
+        const giveawayChannel =
+          interaction.guild.channels.cache.get(config.giveaway.channelId);
+
+        if (!giveawayChannel) {
+          return interaction.reply({
+            content: "❌ Salon giveaway introuvable.",
+            ephemeral: true
+          });
+        }
+
+        const rolePing =
+          interaction.guild.roles.cache.find(
+            r => r.name === config.giveaway.pingRole
+          );
+
+        const giveawayId = Date.now().toString();
+
+        const embed = makeEmbed(
+          "🎉 GIVEAWAY FROZEN",
+          [
+            `🎁 **Lot :** ${prize}`,
+            `🏆 **Gagnants :** ${winnersCount}`,
+            `⏰ **Fin :** <t:${Math.floor(endDate.getTime() / 1000)}:F>`,
+            "",
+            description,
+            "",
+            "Clique sur 🎉 pour participer."
+          ].join("\n")
+        );
+
+        const button = new ButtonBuilder()
+          .setCustomId(`giveaway_join_${giveawayId}`)
+          .setLabel("Participer")
+          .setEmoji("🎉")
+          .setStyle(ButtonStyle.Success);
+
+        const giveawayMessage = await giveawayChannel.send({
+          content: rolePing
+            ? `${rolePing} 🎉 Nouveau giveaway`
+            : "@everyone 🎉 Nouveau giveaway",
+          embeds: [embed],
+          components: [
+            new ActionRowBuilder().addComponents(button)
+          ]
+        });
+
+        giveaways.set(giveawayId, {
+          messageId: giveawayMessage.id,
+          channelId: giveawayChannel.id,
+          prize,
+          winnersCount,
+          endAt: endDate.getTime(),
+          participants: new Set()
+        });
+
+        await interaction.reply({
+          content: "✅ Giveaway créé.",
+          ephemeral: true
+        });
+
+        setTimeout(async () => {
+
+          const data = giveaways.get(giveawayId);
+
+          if (!data) return;
+
+          const participants = [...data.participants];
+
+          if (participants.length <= 0) {
+
+            await giveawayChannel.send(
+              `❌ Giveaway terminé.\nAucun participant.`
+            );
+
+            giveaways.delete(giveawayId);
+            return;
+          }
+
+          const winners =
+            pickWinners(participants, data.winnersCount);
+
+          const winnersPing =
+            winners.map(id => `<@${id}>`).join(" ");
+
+          await giveawayChannel.send(
+            `🎉 Félicitations ${winnersPing}\nVous gagnez : **${data.prize}**`
+          );
+
+          giveaways.delete(giveawayId);
+
+        }, endDate.getTime() - Date.now());
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+});
 
 client.login(process.env.DISCORD_TOKEN);
