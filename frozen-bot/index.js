@@ -275,43 +275,6 @@ async function createTicket(interaction, typeLabel, ticketType) {
   return interaction.reply({ content: `Ticket créé : ${channel}`, ephemeral: true });
 }
 
-async function sendGraphiqueMenu(interaction) {
-  const menu = new StringSelectMenuBuilder()
-    .setCustomId("graphique_menu")
-    .setPlaceholder("Choisis un dossier graphique")
-    .addOptions(
-      { label: "FPS", value: "fps", emoji: "⚡" },
-      { label: "CVC", value: "cvc", emoji: "🧊" },
-      { label: "Opti", value: "opti", emoji: "🚀" },
-      { label: "Troll", value: "troll", emoji: "😈" },
-      { label: "Reshade", value: "reshade", emoji: "🎨" }
-    );
-
-  return interaction.reply({
-    embeds: [makeEmbed("🎨 Pack Graphique", "Choisis le dossier que tu veux télécharger.")],
-    components: [new ActionRowBuilder().addComponents(menu)],
-    ephemeral: true
-  });
-}
-
-async function sendPackList(interaction, title, packs) {
-  if (!packs || packs.length === 0) {
-    return interaction.reply({
-      content: "Aucun lien n’est encore configuré pour cette catégorie.",
-      ephemeral: true
-    });
-  }
-
-  const text = packs
-    .map((pack, index) => `**${index + 1}. ${pack.name}**\n${pack.url}`)
-    .join("\n\n");
-
-  return interaction.reply({
-    embeds: [makeEmbed(title, text.slice(0, 3900))],
-    ephemeral: true
-  });
-}
-
 async function closeTicket(channel, closedBy) {
   const guild = channel.guild;
   const logChannel = getLogChannel(guild);
