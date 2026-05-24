@@ -916,80 +916,15 @@ client.on("interactionCreate", async interaction => {
 });
 
 client.on("messageCreate", async message => {
-
   if (message.author.bot || !message.guild) return;
 
   const prefix = config.prefix || "!";
-
   if (!message.content.startsWith(prefix)) return;
 
-  const args =
-    message.content
-      .slice(prefix.length)
-      .trim()
-      .split(/ +/);
+  const args = message.content.slice(prefix.length).trim().split(/ +/);
+  const command = args.shift()?.toLowerCase();
 
-  const command =
-    args.shift()?.toLowerCase();
-
-  if (command === "setup") {
-
-    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-
-      return message.reply("❌ Permission refusée.");
-    }
-
-    const panelChannel =
-      getChannelByName(
-        message.guild,
-        config.channels.ticketPanel
-      ) || message.channel;
-
-    await sendTicketPanel(panelChannel);
-
-    return message.reply("✅ Panel envoyé.");
-  }
-
-  if (command === "close") {
-
-    if (!message.channel.topic?.startsWith("ticket-owner:")) {
-
-      return message.reply("❌ Utilise cette commande dans un ticket.");
-    }
-
-    return closeTicket(message.channel, message.author);
-  }
-
-  if (command === "giveaway") {
-
-    if (args[0] !== "op") {
-
-      return message.reply(
-        "Utilisation : `!giveaway op`"
-      );
-    }
-
-    if (!canCreateGiveaway(message.member)) {
-
-      return message.reply("❌ Permission refusée.");
-    }
-
-    const button =
-      new ButtonBuilder()
-        .setCustomId(`open_giveaway_modal_${message.author.id}`)
-        .setLabel("Créer le giveaway")
-        .setEmoji("🎉")
-        .setStyle(ButtonStyle.Success);
-
-    return message.reply({
-      content:
-        "🎉 Clique sur le bouton pour ouvrir le menu giveaway.",
-      components: [
-        new ActionRowBuilder().addComponents(button)
-      ]
-    });
-
-      if (command === "help" || command === "aide") {
+  if (command === "help" || command === "aide") {
     return message.reply({
       embeds: [
         makeEmbed(
@@ -1009,20 +944,66 @@ client.on("messageCreate", async message => {
     });
   }
 
+  if (command === "setup") {
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const panelChannel =
+      getChannelByName(message.guild, config.channels.ticketPanel) || message.channel;
+
+    await sendTicketPanel(panelChannel);
+    return message.reply("✅ Panel envoyé.");
+  }
+
+  if (command === "close") {
+    if (!message.channel.topic?.startsWith("ticket-owner:")) {
+      return message.reply("❌ Utilise cette commande dans un ticket.");
+    }
+
+    return closeTicket(message.channel, message.author);
+  }
+
+  if (command === "giveaway") {
+    if (args[0] !== "op") {
+      return message.reply("Utilisation : `!giveaway op`");
+    }
+
+    if (!canCreateGiveaway(message.member)) {
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const button = new ButtonBuilder()
+      .setCustomId(`open_giveaway_modal_${message.author.id}`)
+      .setLabel("Créer le giveaway")
+      .setEmoji("🎉")
+      .setStyle(ButtonStyle.Success);
+
+    return message.reply({
+      content: "🎉 Clique sur le bouton pour ouvrir le menu giveaway.",
+      components: [new ActionRowBuilder().addComponents(button)]
+    });
+  }
+
   if (command === "clear") {
     if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
       return message.reply("❌ Permission refusée.");
     }
 
     const amount = Math.min(parseInt(args[0] || "10", 10), 100);
+
     if (Number.isNaN(amount) || amount < 1) {
       return message.reply("Utilisation : `!clear 10`");
     }
 
     const deleted = await message.channel.bulkDelete(amount, true).catch(() => null);
-    if (!deleted) return message.reply("❌ Impossible de supprimer.");
 
-    return message.channel.send(`✅ ${deleted.size} messages supprimés.`)
+    if (!deleted) {
+      return message.reply("❌ Impossible de supprimer.");
+    }
+
+    return message.channel
+      .send(`✅ ${deleted.size} messages supprimés.`)
       .then(msg => setTimeout(() => msg.delete().catch(() => {}), 3000));
   }
 
@@ -1036,10 +1017,16 @@ client.on("messageCreate", async message => {
     }
 
     const userId = args[0]?.replace(/[<@!>]/g, "");
-    if (!userId) return message.reply("Utilisation : `!add ID`");
+
+    if (!userId) {
+      return message.reply("Utilisation : `!add ID`");
+    }
 
     const user = await message.guild.members.fetch(userId).catch(() => null);
-    if (!user) return message.reply("❌ Utilisateur introuvable.");
+
+    if (!user) {
+      return message.reply("❌ Utilisateur introuvable.");
+    }
 
     await message.channel.permissionOverwrites.edit(user.id, {
       ViewChannel: true,
@@ -1051,11 +1038,17 @@ client.on("messageCreate", async message => {
   }
 
   if (command === "staffstats") {
-    if (!isStaff(message.member)) return message.reply("❌ Permission refusée.");
+    if (!isStaff(message.member)) {
+      return message.reply("❌ Permission refusée.");
+    }
 
     const target = message.mentions.users.first() || message.author;
     const data = loadStats();
-    const stats = data[target.id] || { claimed: 0, closed: 0, recruitForms: 0 };
+    const stats = data[target.id] || {
+      claimed: 0,
+      closed: 0,
+      recruitForms: 0
+    };
 
     return message.reply({
       embeds: [
@@ -1072,7 +1065,6 @@ client.on("messageCreate", async message => {
   }
 
   if (command === "statut") {
-
     return message.reply({
       embeds: [
         makeEmbed(
@@ -1086,15 +1078,10 @@ client.on("messageCreate", async message => {
       ]
     });
   }
-
 });
 
 if (!process.env.DISCORD_TOKEN) {
-
-  console.error(
-    "Erreur : DISCORD_TOKEN manquant."
-  );
-
+  console.error("Erreur : DISCORD_TOKEN manquant.");
   process.exit(1);
 }
 
