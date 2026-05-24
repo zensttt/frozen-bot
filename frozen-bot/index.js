@@ -255,7 +255,7 @@ async function createTicket(interaction, typeLabel, ticketType) {
   }
 
   if (ticketType === "probleme") {
-    ping = [fondateurRole].filter(Boolean).map(role => `${role}`).join(" ");
+    ping = fondateurRole ? `${fondateurRole}` : "";
     description = `${member}, ton ticket problème est ouvert.\nLes fondateurs vont te répondre.`;
   }
 
