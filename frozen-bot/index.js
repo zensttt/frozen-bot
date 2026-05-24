@@ -188,32 +188,31 @@ async function createTicket(interaction, typeLabel, ticketType) {
   ];
 
  if (ticketType === "probleme") {
-    if (fondateurRole) {
-      overwrites.push({
-        id: fondateurRole.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.ManageMessages
-        ]
-      });
-    }
-}
+  if (fondateurRole) {
+    overwrites.push({
+      id: fondateurRole.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.ManageMessages
+      ]
+    });
+  }
 
   } else if (ticketType === "recrutement") {
-    if (gerantRecruteurRole) {
-      overwrites.push({
-        id: gerantRecruteurRole.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.ManageMessages
-        ]
-      });
-    }
-  } else {
+  if (gerantRecruteurRole) {
+    overwrites.push({
+      id: gerantRecruteurRole.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.ManageMessages
+      ]
+    });
+  }
+} else {
     for (const roleName of getStaffRolesArray()) {
       const role = getRole(guild, roleName);
       if (role) {
