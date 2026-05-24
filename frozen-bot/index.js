@@ -887,7 +887,10 @@ client.on("interactionCreate", async interaction => {
     participants: new Set()
   });
 
-  await interaction.reply({ content: "✅ Giveaway créé.", ephemeral: true });
+  await interaction.reply({
+  content: `✅ Giveaway créé.\nID : \`${giveawayId}\``,
+  ephemeral: true
+});
 
   setTimeout(async () => {
     const data = giveaways.get(giveawayId);
@@ -1063,7 +1066,29 @@ client.on("messageCreate", async message => {
       ]
     });
   }
+  if (command === "cancelgiveaway") {
 
+    if (!canCreateGiveaway(message.member)) {
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const giveawayId = args[0];
+
+    if (!giveawayId) {
+      return message.reply("Utilisation : `!cancelgiveaway ID`");
+    }
+
+    const data = giveaways.get(giveawayId);
+
+    if (!data) {
+      return message.reply("❌ Giveaway introuvable.");
+    }
+
+    giveaways.delete(giveawayId);
+
+    return message.reply(`🛑 Giveaway \`${giveawayId}\` annulé.`);
+  }
+  
   if (command === "statut") {
     return message.reply({
       embeds: [
