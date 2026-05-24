@@ -1,7 +1,7 @@
 {
   "name": "frozen-bot",
-  "version": "1.0.0",
-  "description": "Bot Discord Frozen PvP - tickets, packs, securite",
+  "version": "2.0.0",
+  "description": "Frozen PvP bot - tickets, claim, recrutement, logs, stats, anti raid",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
