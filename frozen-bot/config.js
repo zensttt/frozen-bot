@@ -15,7 +15,7 @@ module.exports = {
   },
 
   recruitmentMessage:
-"Si tu veux nous rejoindre, voici ce qu’on demande.\n\n👉 Clique sur le bouton **Formulaire recrutement** pour remplir ta candidature.",
+"Auras-tu le niveau pour nous rejoindre ?",
 
   security: {
     maxMessages: 6,
