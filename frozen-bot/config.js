@@ -44,3 +44,7 @@ module.exports = {
     }
   }
 };
+
+branding: {
+  imageUrl: "https://cdn.discordapp.com/attachments/1426231440328102079/1508070945024250046/ChatGPT_Image_23_mai_2026_00_30_28.png?ex=6a143403&is=6a12e283&hm=4ea027cac4111d39e52702ef705724c438b59de7180aa4fb463fefd7173378b0&"
+},
