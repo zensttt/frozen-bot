@@ -469,23 +469,6 @@ client.on("messageCreate", async message => {
       .then(msg => setTimeout(() => msg.delete().catch(() => {}), 3000));
   }
 
-  if (command === "packs") {
-    return message.reply({
-      embeds: [
-        makeEmbed(
-          "📦 Packs disponibles",
-          [
-            "🎵 **Pack Son** : utilise le panel ticket.",
-            "🎨 **Pack Graphique** : FPS, CVC, Opti, Troll, Reshade.",
-            "",
-            "Les liens se modifient dans `config.js`."
-          ].join("\n")
-        )
-      ]
-    });
-  }
-});
-
 if (!process.env.DISCORD_TOKEN) {
   console.error("Erreur : variable DISCORD_TOKEN manquante dans Railway.");
   process.exit(1);
