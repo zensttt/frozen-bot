@@ -988,6 +988,87 @@ client.on("messageCreate", async message => {
         new ActionRowBuilder().addComponents(button)
       ]
     });
+
+      if (command === "help" || command === "aide") {
+    return message.reply({
+      embeds: [
+        makeEmbed(
+          "📖 Commandes Frozen",
+          [
+            "`!setup` → envoie le panel ticket",
+            "`!close` → ferme le ticket",
+            "`!clear 10` → supprime des messages",
+            "`!add ID` → ajoute quelqu’un au ticket",
+            "`!staffstats` → stats staff",
+            "`!giveaway op` → créer un giveaway",
+            "`!statut` → statut du bot",
+            "`!help` / `!aide` → aide"
+          ].join("\n")
+        )
+      ]
+    });
+  }
+
+  if (command === "clear") {
+    if (!message.member.permissions.has(PermissionFlagsBits.ManageMessages)) {
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const amount = Math.min(parseInt(args[0] || "10", 10), 100);
+    if (Number.isNaN(amount) || amount < 1) {
+      return message.reply("Utilisation : `!clear 10`");
+    }
+
+    const deleted = await message.channel.bulkDelete(amount, true).catch(() => null);
+    if (!deleted) return message.reply("❌ Impossible de supprimer.");
+
+    return message.channel.send(`✅ ${deleted.size} messages supprimés.`)
+      .then(msg => setTimeout(() => msg.delete().catch(() => {}), 3000));
+  }
+
+  if (command === "add") {
+    if (!message.channel.topic?.startsWith("ticket-owner:")) {
+      return message.reply("❌ À utiliser dans un ticket.");
+    }
+
+    if (!isStaff(message.member)) {
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const userId = args[0]?.replace(/[<@!>]/g, "");
+    if (!userId) return message.reply("Utilisation : `!add ID`");
+
+    const user = await message.guild.members.fetch(userId).catch(() => null);
+    if (!user) return message.reply("❌ Utilisateur introuvable.");
+
+    await message.channel.permissionOverwrites.edit(user.id, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true
+    });
+
+    return message.reply(`✅ ${user} ajouté au ticket.`);
+  }
+
+  if (command === "staffstats") {
+    if (!isStaff(message.member)) return message.reply("❌ Permission refusée.");
+
+    const target = message.mentions.users.first() || message.author;
+    const data = loadStats();
+    const stats = data[target.id] || { claimed: 0, closed: 0, recruitForms: 0 };
+
+    return message.reply({
+      embeds: [
+        makeEmbed(
+          `📊 Stats staff — ${target.username}`,
+          [
+            `🎯 Tickets claim : **${stats.claimed || 0}**`,
+            `🔒 Tickets fermés : **${stats.closed || 0}**`,
+            `📋 Formulaires : **${stats.recruitForms || 0}**`
+          ].join("\n")
+        )
+      ]
+    });
   }
 
   if (command === "statut") {
