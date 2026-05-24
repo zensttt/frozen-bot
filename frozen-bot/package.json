@@ -1,13 +1,13 @@
 {
   "name": "frozen-bot",
   "version": "1.0.0",
-  "description": "Frozen Ticket Bot",
+  "description": "Bot Discord Frozen PvP - tickets, packs, securite",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.15.3",
+    "discord.js": "^14.16.3",
     "dotenv": "^16.4.5"
   }
 }
