@@ -347,9 +347,6 @@ client.on("interactionCreate", async interaction => {
       if (interaction.customId === "ticket_menu") {
         const choice = interaction.values[0];
 
-        if (choice === "pack_graphique") return sendGraphiqueMenu(interaction);
-        if (choice === "pack_son") return sendPackList(interaction, "🎵 Pack Son", config.packs.son);
-
         const labels = {
           recrutement: "📋 Recrutement",
           probleme: "🛠️ Problème"
