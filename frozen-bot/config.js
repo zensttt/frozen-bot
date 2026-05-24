@@ -22,13 +22,25 @@ module.exports = {
     "• Respect entre joueurs",
     "• Le trash IG est autorisé, mais Push-to-Talk obligatoire",
     "• Ton leaderboard à jour"
-  ].join("\n"),
+  ].join("\\n"),
 
   security: {
     maxMessages: 6,
     intervalMs: 5000,
     timeoutMs: 60000,
     maxMentions: 6,
-    blockInviteLinks: true
+    blockInviteLinks: true,
+
+    antiRaid: {
+      enabled: true,
+      maxJoins: 5,
+      intervalMs: 20000,
+      lockMinutes: 10
+    },
+
+    autoCloseTickets: {
+      enabled: true,
+      inactiveHours: 12
+    }
   }
 };
