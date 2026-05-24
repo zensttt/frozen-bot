@@ -846,6 +846,70 @@ client.on("interactionCreate", async interaction => {
       }
     }
 
+    if (interaction.isModalSubmit() && interaction.customId.startsWith("giveaway_create_")) {
+  const endDateInput = interaction.fields.getTextInputValue("endDate");
+  const winnersInput = interaction.fields.getTextInputValue("winners");
+  const prize = interaction.fields.getTextInputValue("prize");
+  const description = interaction.fields.getTextInputValue("description") || "Bonne chance à tous !";
+
+  const endDate = new Date(endDateInput);
+
+  if (isNaN(endDate.getTime()) || endDate.getTime() <= Date.now()) {
+    return interaction.reply({
+      content: "❌ Date invalide. Utilise ce format : `2026-05-25T20:00`",
+      ephemeral: true
+    });
+  }
+
+  const winnersCount = parseInt(winnersInput, 10);
+
+  const giveawayChannel = interaction.guild.channels.cache.get(config.giveaway.channelId);
+  const rolePing = interaction.guild.roles.cache.find(r => r.name === config.giveaway.pingRole);
+  const giveawayId = Date.now().toString();
+
+  const button = new ButtonBuilder()
+    .setCustomId(`giveaway_join_${giveawayId}`)
+    .setLabel("Participer")
+    .setEmoji("🎉")
+    .setStyle(ButtonStyle.Success);
+
+  const msg = await giveawayChannel.send({
+    content: rolePing ? `${rolePing} 🎉 Nouveau giveaway !` : "@everyone 🎉 Nouveau giveaway !",
+    embeds: [makeEmbed("🎉 GIVEAWAY FROZEN", `🎁 **Lot :** ${prize}\n🏆 **Gagnants :** ${winnersCount}\n⏰ **Fin :** <t:${Math.floor(endDate.getTime() / 1000)}:F>\n\n${description}\n\nClique sur 🎉 pour participer.`)],
+    components: [new ActionRowBuilder().addComponents(button)]
+  });
+
+  giveaways.set(giveawayId, {
+    messageId: msg.id,
+    prize,
+    winnersCount,
+    endAt: endDate.getTime(),
+    participants: new Set()
+  });
+
+  await interaction.reply({ content: "✅ Giveaway créé.", ephemeral: true });
+
+  setTimeout(async () => {
+    const data = giveaways.get(giveawayId);
+    if (!data) return;
+
+    const participants = [...data.participants];
+
+    if (!participants.length) {
+      giveaways.delete(giveawayId);
+      return giveawayChannel.send(`❌ Giveaway terminé : **${prize}**\nAucun participant.`);
+    }
+
+    const winners = pickWinners(participants, winnersCount);
+    const winnersPing = winners.map(id => `<@${id}>`).join(" ");
+
+    await giveawayChannel.send(`🎉 Félicitations ${winnersPing} !\nVous gagnez : **${prize}**`);
+
+    giveaways.delete(giveawayId);
+  }, endDate.getTime() - Date.now());
+}
+
+    
   } catch (err) {
     console.error(err);
   }
