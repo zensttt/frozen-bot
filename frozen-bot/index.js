@@ -36,6 +36,19 @@ function getChannelByName(guild, name) {
   return guild.channels.cache.find(ch => ch.name === name);
 }
 
+async function getOrCreateLogChannel(guild) {
+  let channel = getChannelByName(guild, config.channels.ticketLogs);
+
+  if (!channel) {
+    channel = await guild.channels.create({
+      name: config.channels.ticketLogs,
+      type: ChannelType.GuildText
+    }).catch(() => null);
+  }
+
+  return channel;
+}
+
 function makeEmbed(title, description) {
   return new EmbedBuilder()
     .setColor(0x00aaff)
@@ -91,7 +104,7 @@ async function sendTicketPanel(channel) {
   });
 }
 
-async function createTicket(interaction, typeLabel) {
+async function createTicket(interaction, typeLabel, ticketType) {
   const guild = interaction.guild;
   const member = interaction.member;
 
@@ -162,18 +175,19 @@ async function createTicket(interaction, typeLabel) {
     .setEmoji("🔒")
     .setStyle(ButtonStyle.Danger);
 
+  let description = `${member}, ton ticket est ouvert.\nUn membre du staff va te répondre.`;
+
+  if (ticketType === "recrutement") {
+    description = `${member}, ton ticket recrutement est ouvert.\n\n${config.recruitmentMessage}`;
+  }
+
   await channel.send({
     content: `${member}`,
-    embeds: [
-      makeEmbed(
-        `🎫 Ticket — ${typeLabel}`,
-        `${member}, ton ticket est ouvert.\nUn membre du staff va te répondre.`
-      )
-    ],
+    embeds: [makeEmbed(`🎫 Ticket — ${typeLabel}`, description)],
     components: [new ActionRowBuilder().addComponents(closeButton)]
   });
 
-  const logChannel = getChannelByName(guild, config.channels.ticketLogs);
+  const logChannel = await getOrCreateLogChannel(guild);
   if (logChannel) {
     await logChannel.send({
       embeds: [
@@ -182,7 +196,7 @@ async function createTicket(interaction, typeLabel) {
           `Utilisateur : ${member}\nCatégorie : **${typeLabel}**\nSalon : ${channel}`
         )
       ]
-    });
+    }).catch(() => {});
   }
 
   return interaction.reply({ content: `Ticket créé : ${channel}`, ephemeral: true });
@@ -236,7 +250,7 @@ async function sendPackList(interaction, title, packs) {
 async function closeTicket(channel, closedBy) {
   const guild = channel.guild;
 
-  const logChannel = getChannelByName(guild, config.channels.ticketLogs);
+  const logChannel = await getOrCreateLogChannel(guild);
   if (logChannel) {
     await logChannel.send({
       embeds: [
@@ -245,7 +259,7 @@ async function closeTicket(channel, closedBy) {
           `Salon : **${channel.name}**\nFermé par : ${closedBy}`
         )
       ]
-    });
+    }).catch(() => {});
   }
 
   await channel.send("🔒 Ticket fermé dans 5 secondes.");
@@ -274,7 +288,7 @@ client.on("interactionCreate", async interaction => {
           probleme: "🛠️ Problème"
         };
 
-        return createTicket(interaction, labels[choice] || choice);
+        return createTicket(interaction, labels[choice] || choice, choice);
       }
 
       if (interaction.customId === "graphique_menu") {
