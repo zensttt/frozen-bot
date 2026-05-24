@@ -14,15 +14,8 @@ module.exports = {
     gerantRecruteur: "Gérant recruteur"
   },
 
-  recruitmentMessage: [
-    "Si tu veux nous rejoindre, voici ce qu’on demande :",
-    "• Ton âge",
-    "• Quelques POV pour voir ton niveau 🎥",
-    "• Un minimum de présence",
-    "• Respect entre joueurs",
-    "• Le trash IG est autorisé, mais Push-to-Talk obligatoire",
-    "• Ton leaderboard à jour"
-  ].join("\n"),
+  recruitmentMessage:
+"Si tu veux nous rejoindre, voici ce qu’on demande.\n\n👉 Clique sur le bouton **Formulaire recrutement** pour remplir ta candidature.",
 
   security: {
     maxMessages: 6,
