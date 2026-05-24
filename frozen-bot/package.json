@@ -1,12 +1,13 @@
 {
+  "name": "frozen-bot",
+  "version": "1.0.0",
+  "description": "Frozen Ticket Bot",
+  "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
-    "deploy": "node deploy-commands.js"
+    "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.16.3",
+    "discord.js": "^14.15.3",
     "dotenv": "^16.4.5"
-  },
-  "devDependencies": {}
+  }
 }
