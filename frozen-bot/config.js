@@ -8,11 +8,11 @@ module.exports = {
     ticketLogsId: "1416470334701305866"
   },
 
-  staffRoles: [
-    "𝑭𝒐𝒏𝒅𝒂𝒕𝒆𝒖𝒓",
-    "👑𝑴𝒊𝒏𝒊 𝑭𝒐𝒏𝒅𝒂𝒕𝒆𝒖𝒓 👑",
-    "Gérant recruteur"
-  ],
+  staffRoles: {
+    fondateur: "𝑭𝒐𝒏𝒅𝒂𝒕𝒆𝒖𝒓",
+    miniFondateur: "👑𝑴𝒊𝒏𝒊 𝑭𝒐𝒏𝒅𝒂𝒕𝒆𝒖𝒓 👑",
+    gerantRecruteur: "Gérant recruteur"
+  },
 
   recruitmentMessage: [
     "Si tu veux nous rejoindre, voici ce qu’on demande :",
