@@ -599,3 +599,358 @@ client.once("ready", () => {
   });
 
 });
+
+client.on("interactionCreate", async interaction => {
+
+  try {
+
+    if (interaction.isStringSelectMenu()) {
+
+      if (interaction.customId === "ticket_menu") {
+
+        const choice = interaction.values[0];
+
+        const labels = {
+          recrutement: "📋 Recrutement",
+          probleme: "🛠️ Problème"
+        };
+
+        return createTicket(
+          interaction,
+          labels[choice] || choice,
+          choice
+        );
+      }
+    }
+
+    if (interaction.isButton()) {
+
+      if (interaction.customId === "claim_ticket") {
+
+        if (!interaction.channel.topic?.startsWith("ticket-owner:")) {
+
+          return interaction.reply({
+            content: "Ce salon n’est pas un ticket.",
+            ephemeral: true
+          });
+        }
+
+        if (!isStaff(interaction.member)) {
+
+          return interaction.reply({
+            content: "Seul le staff peut claim un ticket.",
+            ephemeral: true
+          });
+        }
+
+        const currentTopic =
+          interaction.channel.topic || "";
+
+        if (
+          currentTopic.includes("claimed:")
+          &&
+          !currentTopic.includes("claimed:none")
+        ) {
+
+          return interaction.reply({
+            content: "Ce ticket est déjà claim.",
+            ephemeral: true
+          });
+        }
+
+        await interaction.channel.setTopic(
+          currentTopic.replace(
+            "claimed:none",
+            `claimed:${interaction.user.id}`
+          )
+        ).catch(() => {});
+
+        addStaffStat(interaction.user.id, "claimed");
+
+        await interaction.reply({
+          embeds: [
+            makeEmbed(
+              "🎯 Ticket claim",
+              `Ticket pris en charge par ${interaction.user}.`
+            )
+          ]
+        });
+
+        await sendLog(
+          interaction.guild,
+          "🎯 Ticket claim",
+          `Ticket : ${interaction.channel}\nStaff : ${interaction.user}`
+        );
+
+        return;
+      }
+
+      if (interaction.customId === "close_ticket") {
+
+        if (!interaction.channel.topic?.startsWith("ticket-owner:")) {
+
+          return interaction.reply({
+            content: "Ce salon n’est pas un ticket.",
+            ephemeral: true
+          });
+        }
+
+        await interaction.reply("Fermeture du ticket...");
+        return closeTicket(interaction.channel, interaction.user);
+      }
+
+      if (interaction.customId === "start_recruit_form") {
+
+        const modal =
+          new ModalBuilder()
+            .setCustomId("recruit_form")
+            .setTitle("Candidature Frozen");
+
+        const age =
+          new TextInputBuilder()
+            .setCustomId("age")
+            .setLabel("Ton âge")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true);
+
+        const dispo =
+          new TextInputBuilder()
+            .setCustomId("dispo")
+            .setLabel("Tes disponibilités")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true);
+
+        const niveau =
+          new TextInputBuilder()
+            .setCustomId("niveau")
+            .setLabel("Ton niveau / expérience")
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
+
+        const leaderboard =
+          new TextInputBuilder()
+            .setCustomId("leaderboard")
+            .setLabel("Ton leaderboard")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true);
+
+        const pov =
+          new TextInputBuilder()
+            .setCustomId("pov")
+            .setLabel("POV / liens")
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(age),
+          new ActionRowBuilder().addComponents(dispo),
+          new ActionRowBuilder().addComponents(niveau),
+          new ActionRowBuilder().addComponents(leaderboard),
+          new ActionRowBuilder().addComponents(pov)
+        );
+
+        return interaction.showModal(modal);
+      }
+
+      if (interaction.customId.startsWith("open_giveaway_modal_")) {
+
+        const ownerId =
+          interaction.customId.replace(
+            "open_giveaway_modal_",
+            ""
+          );
+
+        if (interaction.user.id !== ownerId) {
+
+          return interaction.reply({
+            content: "❌ Ce bouton n’est pas pour toi.",
+            ephemeral: true
+          });
+        }
+
+        if (!canCreateGiveaway(interaction.member)) {
+
+          return interaction.reply({
+            content: "❌ Permission refusée.",
+            ephemeral: true
+          });
+        }
+
+        const modal =
+          new ModalBuilder()
+            .setCustomId(`giveaway_create_${ownerId}`)
+            .setTitle("Créer un giveaway");
+
+        const endDate =
+          new TextInputBuilder()
+            .setCustomId("endDate")
+            .setLabel("Date de fin")
+            .setPlaceholder("2026-05-30 20:00")
+            .setStyle(TextInputStyle.Short);
+
+        const winners =
+          new TextInputBuilder()
+            .setCustomId("winners")
+            .setLabel("Nombre de gagnants")
+            .setPlaceholder("1")
+            .setStyle(TextInputStyle.Short);
+
+        const prize =
+          new TextInputBuilder()
+            .setCustomId("prize")
+            .setLabel("Lot à gagner")
+            .setPlaceholder("Nitro")
+            .setStyle(TextInputStyle.Short);
+
+        const description =
+          new TextInputBuilder()
+            .setCustomId("description")
+            .setLabel("Description")
+            .setPlaceholder("Giveaway Frozen")
+            .setStyle(TextInputStyle.Paragraph);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(endDate),
+          new ActionRowBuilder().addComponents(winners),
+          new ActionRowBuilder().addComponents(prize),
+          new ActionRowBuilder().addComponents(description)
+        );
+
+        return interaction.showModal(modal);
+      }
+
+      if (interaction.customId.startsWith("giveaway_join_")) {
+
+        const giveawayId =
+          interaction.customId.replace(
+            "giveaway_join_",
+            ""
+          );
+
+        const data = giveaways.get(giveawayId);
+
+        if (!data) {
+
+          return interaction.reply({
+            content: "❌ Giveaway terminé.",
+            ephemeral: true
+          });
+        }
+
+        data.participants.add(interaction.user.id);
+
+        return interaction.reply({
+          content: "✅ Participation enregistrée.",
+          ephemeral: true
+        });
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+client.on("messageCreate", async message => {
+
+  if (message.author.bot || !message.guild) return;
+
+  const prefix = config.prefix || "!";
+
+  if (!message.content.startsWith(prefix)) return;
+
+  const args =
+    message.content
+      .slice(prefix.length)
+      .trim()
+      .split(/ +/);
+
+  const command =
+    args.shift()?.toLowerCase();
+
+  if (command === "setup") {
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const panelChannel =
+      getChannelByName(
+        message.guild,
+        config.channels.ticketPanel
+      ) || message.channel;
+
+    await sendTicketPanel(panelChannel);
+
+    return message.reply("✅ Panel envoyé.");
+  }
+
+  if (command === "close") {
+
+    if (!message.channel.topic?.startsWith("ticket-owner:")) {
+
+      return message.reply("❌ Utilise cette commande dans un ticket.");
+    }
+
+    return closeTicket(message.channel, message.author);
+  }
+
+  if (command === "giveaway") {
+
+    if (args[0] !== "op") {
+
+      return message.reply(
+        "Utilisation : `!giveaway op`"
+      );
+    }
+
+    if (!canCreateGiveaway(message.member)) {
+
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const button =
+      new ButtonBuilder()
+        .setCustomId(`open_giveaway_modal_${message.author.id}`)
+        .setLabel("Créer le giveaway")
+        .setEmoji("🎉")
+        .setStyle(ButtonStyle.Success);
+
+    return message.reply({
+      content:
+        "🎉 Clique sur le bouton pour ouvrir le menu giveaway.",
+      components: [
+        new ActionRowBuilder().addComponents(button)
+      ]
+    });
+  }
+
+  if (command === "statut") {
+
+    return message.reply({
+      embeds: [
+        makeEmbed(
+          "🟢 Statut du bot",
+          [
+            `Ping : ${client.ws.ping}ms`,
+            `Serveurs : ${client.guilds.cache.size}`,
+            `Utilisateurs : ${client.users.cache.size}`
+          ].join("\n")
+        )
+      ]
+    });
+  }
+
+});
+
+if (!process.env.DISCORD_TOKEN) {
+
+  console.error(
+    "Erreur : DISCORD_TOKEN manquant."
+  );
+
+  process.exit(1);
+}
+
+client.login(process.env.DISCORD_TOKEN);
