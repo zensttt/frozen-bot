@@ -187,7 +187,7 @@ async function createTicket(interaction, typeLabel, ticketType) {
     }
   ];
 
-  if (ticketType === "probleme") {
+ if (ticketType === "probleme") {
     if (fondateurRole) {
       overwrites.push({
         id: fondateurRole.id,
@@ -199,18 +199,8 @@ async function createTicket(interaction, typeLabel, ticketType) {
         ]
       });
     }
+}
 
-    if (miniFondateurRole) {
-      overwrites.push({
-        id: miniFondateurRole.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.ManageMessages
-        ]
-      });
-    }
   } else if (ticketType === "recrutement") {
     if (gerantRecruteurRole) {
       overwrites.push({
@@ -265,7 +255,7 @@ async function createTicket(interaction, typeLabel, ticketType) {
   }
 
   if (ticketType === "probleme") {
-    ping = [fondateurRole, miniFondateurRole].filter(Boolean).map(role => `${role}`).join(" ");
+    ping = [fondateurRole].filter(Boolean).map(role => `${role}`).join(" ");
     description = `${member}, ton ticket problème est ouvert.\nLes fondateurs vont te répondre.`;
   }
 
