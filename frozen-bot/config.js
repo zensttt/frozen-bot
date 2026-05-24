@@ -4,7 +4,7 @@ module.exports = {
 
   channels: {
     ticketPanel: "🆘｜𝙏𝙞𝙘𝙠𝙚𝙩s",
-    ticketLogs: "✅｜𝙏𝙞𝙘𝙠𝙚𝙩-𝙡𝙤𝙜𝙨"
+    ticketLogs: "✅｜𝙏𝙞𝙘𝙠𝙚𝙩-𝙡𝙤𝙜𝙨",
     ticketLogsId: "1416470334701305866"
   },
 
