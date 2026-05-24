@@ -3,10 +3,10 @@ module.exports = {
   serverName: "Frozen ᴾⱽᴾ",
 
   channels: {
-  ticketPanel: "🆘｜𝙏𝙞𝙘𝙠𝙚𝙩s",
-  ticketLogs: "✅｜𝙏𝙞𝙘𝙠𝙚𝙩-𝙡𝙤𝙜𝙨",
-  ticketLogsId: "1416470334701305866"
-},
+    ticketPanel: "🆘｜𝙏𝙞𝙘𝙠𝙚𝙩s",
+    ticketLogs: "✅｜𝙏𝙞𝙘𝙠𝙚𝙩-𝙡𝙤𝙜𝙨"
+    ticketLogsId: "1416470334701305866"
+  },
 
   staffRoles: [
     "𝑭𝒐𝒏𝒅𝒂𝒕𝒆𝒖𝒓",
