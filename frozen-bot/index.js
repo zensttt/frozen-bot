@@ -36,16 +36,17 @@ function getChannelByName(guild, name) {
   return guild.channels.cache.find(ch => ch.name === name);
 }
 
-async function getLogChannel(guild) {
-  const byId = guild.channels.cache.get(config.channels.ticketLogsId);
+async function getOrCreateLogChannel(guild) {
+  let channel = getChannelByName(guild, config.channels.ticketLogs);
 
-  if (byId) return byId;
+  if (!channel) {
+    channel = await guild.channels.create({
+      name: config.channels.ticketLogs,
+      type: ChannelType.GuildText
+    }).catch(() => null);
+  }
 
-  const byName = guild.channels.cache.find(
-    ch => ch.name === config.channels.ticketLogs
-  );
-
-  return byName || null;
+  return channel;
 }
 
 function makeEmbed(title, description) {
