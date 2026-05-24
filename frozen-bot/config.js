@@ -49,3 +49,21 @@ module.exports = {
     blockInviteLinks: true
   }
 };
+
+client.on('messageCreate', async message => {
+    if (message.author.bot) return;
+
+    if (message.content === '!setup') {
+        message.channel.send('Panel tickets configuré ✅');
+    }
+
+    if (message.content === '!clear') {
+        await message.channel.bulkDelete(10).catch(() => {});
+    }
+
+    if (message.content === '!close') {
+        message.channel.send('Ticket fermé.');
+    }
+});
+
+client.login(process.env.DISCORD_TOKEN);
