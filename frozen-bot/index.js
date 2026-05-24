@@ -88,7 +88,8 @@ function makeEmbed(title, description) {
     .setTitle(title)
     .setDescription(description)
     .setFooter({ text: `${config.serverName} • Frozen Bot` })
-    .setTimestamp();
+    .setTimestamp()
+    .setImage(config.branding.imageUrl);
 }
 
 function escapeHtml(text = "") {
