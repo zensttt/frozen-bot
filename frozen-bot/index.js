@@ -10,7 +10,8 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
-  PermissionFlagsBits
+  PermissionFlagsBits,
+  AttachmentBuilder
 } = require("discord.js");
 
 const config = require("./config");
@@ -27,26 +28,37 @@ const client = new Client({
 
 const spamMap = new Map();
 
+function getRole(guild, roleName) {
+  return guild.roles.cache.find(role => role.name === roleName);
+}
+
+function getStaffRolesArray() {
+  return [
+    config.staffRoles.fondateur,
+    config.staffRoles.miniFondateur,
+    config.staffRoles.gerantRecruteur
+  ];
+}
+
 function isStaff(member) {
   if (!member || !member.roles) return false;
-  return member.roles.cache.some(role => config.staffRoles.includes(role.name));
+  return member.roles.cache.some(role => getStaffRolesArray().includes(role.name));
+}
+
+function isFounder(member) {
+  if (!member || !member.roles) return false;
+  return member.roles.cache.some(role =>
+    role.name === config.staffRoles.fondateur ||
+    role.name === config.staffRoles.miniFondateur
+  );
 }
 
 function getChannelByName(guild, name) {
   return guild.channels.cache.find(ch => ch.name === name);
 }
 
-async function getOrCreateLogChannel(guild) {
-  let channel = getChannelByName(guild, config.channels.ticketLogs);
-
-  if (!channel) {
-    channel = await guild.channels.create({
-      name: config.channels.ticketLogs,
-      type: ChannelType.GuildText
-    }).catch(() => null);
-  }
-
-  return channel;
+function getLogChannel(guild) {
+  return guild.channels.cache.get(config.channels.ticketLogsId) || getChannelByName(guild, config.channels.ticketLogs);
 }
 
 function makeEmbed(title, description) {
@@ -58,21 +70,44 @@ function makeEmbed(title, description) {
     .setTimestamp();
 }
 
-function chunkText(text, max = 3900) {
-  const chunks = [];
-  let current = "";
+async function createTranscript(channel) {
+  const messages = [];
+  let lastId;
 
-  for (const part of text.split("\n\n")) {
-    if ((current + "\n\n" + part).length > max) {
-      chunks.push(current);
-      current = part;
-    } else {
-      current = current ? current + "\n\n" + part : part;
-    }
+  while (true) {
+    const options = { limit: 100 };
+    if (lastId) options.before = lastId;
+
+    const fetched = await channel.messages.fetch(options).catch(() => null);
+    if (!fetched || fetched.size === 0) break;
+
+    messages.push(...fetched.values());
+    lastId = fetched.last().id;
+
+    if (fetched.size < 100) break;
   }
 
-  if (current) chunks.push(current);
-  return chunks;
+  messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+  let content = `Transcript du ticket : #${channel.name}\n`;
+  content += `Salon ID : ${channel.id}\n`;
+  content += `Date : ${new Date().toLocaleString("fr-FR")}\n`;
+  content += "----------------------------------------\n\n";
+
+  for (const msg of messages) {
+    const date = new Date(msg.createdTimestamp).toLocaleString("fr-FR");
+    const author = msg.author ? `${msg.author.tag} (${msg.author.id})` : "Inconnu";
+    const text = msg.content && msg.content.trim() ? msg.content : "[embed/fichier/sans texte]";
+    const attachments = msg.attachments.size > 0
+      ? "\nFichiers : " + msg.attachments.map(a => a.url).join(", ")
+      : "";
+
+    content += `[${date}] ${author}\n${text}${attachments}\n\n`;
+  }
+
+  return new AttachmentBuilder(Buffer.from(content, "utf-8"), {
+    name: `transcript-${channel.name}.txt`
+  });
 }
 
 async function sendTicketPanel(channel) {
@@ -127,7 +162,9 @@ async function createTicket(interaction, typeLabel, ticketType) {
     });
   }
 
-  const staffRoles = guild.roles.cache.filter(role => config.staffRoles.includes(role.name));
+  const fondateurRole = getRole(guild, config.staffRoles.fondateur);
+  const miniFondateurRole = getRole(guild, config.staffRoles.miniFondateur);
+  const gerantRecruteurRole = getRole(guild, config.staffRoles.gerantRecruteur);
 
   const overwrites = [
     { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
@@ -147,17 +184,61 @@ async function createTicket(interaction, typeLabel, ticketType) {
         PermissionFlagsBits.ManageChannels,
         PermissionFlagsBits.ReadMessageHistory
       ]
-    },
-    ...staffRoles.map(role => ({
-      id: role.id,
-      allow: [
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.ReadMessageHistory,
-        PermissionFlagsBits.ManageMessages
-      ]
-    }))
+    }
   ];
+
+  if (ticketType === "probleme") {
+    if (fondateurRole) {
+      overwrites.push({
+        id: fondateurRole.id,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.ManageMessages
+        ]
+      });
+    }
+
+    if (miniFondateurRole) {
+      overwrites.push({
+        id: miniFondateurRole.id,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.ManageMessages
+        ]
+      });
+    }
+  } else if (ticketType === "recrutement") {
+    if (gerantRecruteurRole) {
+      overwrites.push({
+        id: gerantRecruteurRole.id,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.ManageMessages
+        ]
+      });
+    }
+  } else {
+    for (const roleName of getStaffRolesArray()) {
+      const role = getRole(guild, roleName);
+      if (role) {
+        overwrites.push({
+          id: role.id,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.ManageMessages
+          ]
+        });
+      }
+    }
+  }
 
   const safeName = member.user.username.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 30);
 
@@ -175,19 +256,26 @@ async function createTicket(interaction, typeLabel, ticketType) {
     .setEmoji("🔒")
     .setStyle(ButtonStyle.Danger);
 
+  let ping = "";
   let description = `${member}, ton ticket est ouvert.\nUn membre du staff va te répondre.`;
 
   if (ticketType === "recrutement") {
+    ping = gerantRecruteurRole ? `${gerantRecruteurRole}` : "";
     description = `${member}, ton ticket recrutement est ouvert.\n\n${config.recruitmentMessage}`;
   }
 
+  if (ticketType === "probleme") {
+    ping = [fondateurRole, miniFondateurRole].filter(Boolean).map(role => `${role}`).join(" ");
+    description = `${member}, ton ticket problème est ouvert.\nLes fondateurs vont te répondre.`;
+  }
+
   await channel.send({
-    content: `${member}`,
+    content: `${member} ${ping}`.trim(),
     embeds: [makeEmbed(`🎫 Ticket — ${typeLabel}`, description)],
     components: [new ActionRowBuilder().addComponents(closeButton)]
   });
 
-  const logChannel = await getOrCreateLogChannel(guild);
+  const logChannel = getLogChannel(guild);
   if (logChannel) {
     await logChannel.send({
       embeds: [
@@ -233,24 +321,17 @@ async function sendPackList(interaction, title, packs) {
     .map((pack, index) => `**${index + 1}. ${pack.name}**\n${pack.url}`)
     .join("\n\n");
 
-  const chunks = chunkText(text);
-  await interaction.reply({
-    embeds: [makeEmbed(title, chunks.shift())],
+  return interaction.reply({
+    embeds: [makeEmbed(title, text.slice(0, 3900))],
     ephemeral: true
   });
-
-  for (const chunk of chunks) {
-    await interaction.followUp({
-      embeds: [makeEmbed(title, chunk)],
-      ephemeral: true
-    });
-  }
 }
 
 async function closeTicket(channel, closedBy) {
   const guild = channel.guild;
+  const logChannel = getLogChannel(guild);
+  const transcript = await createTranscript(channel);
 
-  const logChannel = await getOrCreateLogChannel(guild);
   if (logChannel) {
     await logChannel.send({
       embeds: [
@@ -258,7 +339,8 @@ async function closeTicket(channel, closedBy) {
           "🔒 Ticket fermé",
           `Salon : **${channel.name}**\nFermé par : ${closedBy}`
         )
-      ]
+      ],
+      files: [transcript]
     }).catch(() => {});
   }
 
@@ -370,6 +452,7 @@ client.on("messageCreate", async message => {
             "`!setup` → envoie le panel ticket",
             "`!close` → ferme le ticket actuel",
             "`!clear 10` → supprime des messages",
+            "`!add ID` → ajoute quelqu’un au ticket",
             "`!packs` → affiche les catégories de packs",
             "`!help` → affiche cette aide"
           ].join("\n")
@@ -386,6 +469,30 @@ client.on("messageCreate", async message => {
     const panelChannel = getChannelByName(message.guild, config.channels.ticketPanel) || message.channel;
     await sendTicketPanel(panelChannel);
     return message.reply(`✅ Panel ticket envoyé dans ${panelChannel}.`);
+  }
+
+  if (command === "add") {
+    if (!message.channel.topic?.startsWith("ticket-owner:")) {
+      return message.reply("❌ Cette commande doit être utilisée dans un ticket.");
+    }
+
+    if (!isStaff(member)) {
+      return message.reply("❌ Seul le staff peut ajouter quelqu’un dans un ticket.");
+    }
+
+    const userId = args[0]?.replace(/[<@!>]/g, "");
+    if (!userId) return message.reply("Utilisation : `!add ID_DISCORD`");
+
+    const user = await message.guild.members.fetch(userId).catch(() => null);
+    if (!user) return message.reply("❌ Utilisateur introuvable.");
+
+    await message.channel.permissionOverwrites.edit(user.id, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true
+    });
+
+    return message.reply(`✅ ${user} a été ajouté au ticket.`);
   }
 
   if (command === "close") {
