@@ -1,4 +1,5 @@
 module.exports = {
+  prefix: "!",
   serverName: "Frozen ᴾⱽᴾ",
 
   channels: {
@@ -14,7 +15,6 @@ module.exports = {
 
   packs: {
     son: [
-      // Exemple :
       // { name: "Pack son 1", url: "https://ton-lien.com" }
     ],
 
