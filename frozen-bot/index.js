@@ -117,7 +117,7 @@ async function sendTicketPanel(channel) {
       "Sélectionne une catégorie dans le menu ci-dessous.",
       "",
       "📋 **Recrutement**",
-      "🛠️ **Problème**",
+      "🛠️ **Problème**"
     ].join("\n")
   );
 
@@ -126,9 +126,7 @@ async function sendTicketPanel(channel) {
     .setPlaceholder("Choisis une catégorie")
     .addOptions(
       { label: "Recrutement", value: "recrutement", emoji: "📋" },
-      { label: "Problème", value: "probleme", emoji: "🛠️" },
-      { label: "Pack Graphique", value: "pack_graphique", emoji: "🎨" },
-      { label: "Pack Son", value: "pack_son", emoji: "🎵" }
+      { label: "Problème", value: "probleme", emoji: "🛠️" }
     );
 
   await channel.send({
