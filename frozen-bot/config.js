@@ -13,6 +13,16 @@ module.exports = {
     "Gérant recruteur"
   ],
 
+  recruitmentMessage: [
+    "Si tu veux nous rejoindre, voici ce qu’on demande :",
+    "• Ton âge",
+    "• Quelques POV pour voir ton niveau 🎥",
+    "• Un minimum de présence",
+    "• Respect entre joueurs",
+    "• Le trash IG est autorisé, mais Push-to-Talk obligatoire",
+    "• Ton leaderboard à jour"
+  ].join("\n"),
+
   packs: {
     son: [
       // { name: "Pack son 1", url: "https://ton-lien.com" }
