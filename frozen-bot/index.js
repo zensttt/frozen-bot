@@ -118,8 +118,6 @@ async function sendTicketPanel(channel) {
       "",
       "📋 **Recrutement**",
       "🛠️ **Problème**",
-      "🎨 **Pack Graphique**",
-      "🎵 **Pack Son**"
     ].join("\n")
   );
 
