@@ -601,98 +601,50 @@ client.once("ready", () => {
 });
 
 client.on("interactionCreate", async interaction => {
-
   try {
+    if (interaction.isStringSelectMenu() && interaction.customId === "ticket_menu") {
+      const choice = interaction.values[0];
 
-    if (interaction.isStringSelectMenu()) {
+      const labels = {
+        recrutement: "📋 Recrutement",
+        probleme: "🛠️ Problème"
+      };
 
-      if (interaction.customId === "ticket_menu") {
-
-        const choice = interaction.values[0];
-
-        const labels = {
-          recrutement: "📋 Recrutement",
-          probleme: "🛠️ Problème"
-        };
-
-        return createTicket(
-          interaction,
-          labels[choice] || choice,
-          choice
-        );
-      }
+      return createTicket(interaction, labels[choice] || choice, choice);
     }
 
     if (interaction.isButton()) {
-
       if (interaction.customId === "claim_ticket") {
-
         if (!interaction.channel.topic?.startsWith("ticket-owner:")) {
-
-          return interaction.reply({
-            content: "Ce salon n’est pas un ticket.",
-            ephemeral: true
-          });
+          return interaction.reply({ content: "Ce salon n’est pas un ticket.", ephemeral: true });
         }
 
         if (!isStaff(interaction.member)) {
-
-          return interaction.reply({
-            content: "Seul le staff peut claim un ticket.",
-            ephemeral: true
-          });
+          return interaction.reply({ content: "Seul le staff peut claim un ticket.", ephemeral: true });
         }
 
-        const currentTopic =
-          interaction.channel.topic || "";
+        const currentTopic = interaction.channel.topic || "";
 
-        if (
-          currentTopic.includes("claimed:")
-          &&
-          !currentTopic.includes("claimed:none")
-        ) {
-
-          return interaction.reply({
-            content: "Ce ticket est déjà claim.",
-            ephemeral: true
-          });
+        if (currentTopic.includes("claimed:") && !currentTopic.includes("claimed:none")) {
+          return interaction.reply({ content: "Ce ticket est déjà claim.", ephemeral: true });
         }
 
         await interaction.channel.setTopic(
-          currentTopic.replace(
-            "claimed:none",
-            `claimed:${interaction.user.id}`
-          )
+          currentTopic.replace("claimed:none", `claimed:${interaction.user.id}`)
         ).catch(() => {});
 
         addStaffStat(interaction.user.id, "claimed");
 
         await interaction.reply({
-          embeds: [
-            makeEmbed(
-              "🎯 Ticket claim",
-              `Ticket pris en charge par ${interaction.user}.`
-            )
-          ]
+          embeds: [makeEmbed("🎯 Ticket claim", `Ticket pris en charge par ${interaction.user}.`)]
         });
-
-        await sendLog(
-          interaction.guild,
-          "🎯 Ticket claim",
-          `Ticket : ${interaction.channel}\nStaff : ${interaction.user}`
-        );
 
         return;
       }
 
       if (interaction.customId === "close_ticket") {
-
         if (!interaction.channel.topic?.startsWith("ticket-owner:")) {
-
-          return interaction.reply({
-            content: "Ce salon n’est pas un ticket.",
-            ephemeral: true
-          });
+          return interaction.reply({ content: "Ce salon n’est pas un ticket.", ephemeral: true });
         }
 
         await interaction.reply("Fermeture du ticket...");
@@ -700,141 +652,110 @@ client.on("interactionCreate", async interaction => {
       }
 
       if (interaction.customId === "start_recruit_form") {
-
-        const modal =
-          new ModalBuilder()
-            .setCustomId("recruit_form")
-            .setTitle("Candidature Frozen");
-
-        const age =
-          new TextInputBuilder()
-            .setCustomId("age")
-            .setLabel("Ton âge")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        const dispo =
-          new TextInputBuilder()
-            .setCustomId("dispo")
-            .setLabel("Tes disponibilités")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        const niveau =
-          new TextInputBuilder()
-            .setCustomId("niveau")
-            .setLabel("Ton niveau / expérience")
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true);
-
-        const leaderboard =
-          new TextInputBuilder()
-            .setCustomId("leaderboard")
-            .setLabel("Ton leaderboard")
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true);
-
-        const pov =
-          new TextInputBuilder()
-            .setCustomId("pov")
-            .setLabel("POV / liens")
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true);
+        const modal = new ModalBuilder()
+          .setCustomId("recruit_form")
+          .setTitle("Candidature Frozen");
 
         modal.addComponents(
-          new ActionRowBuilder().addComponents(age),
-          new ActionRowBuilder().addComponents(dispo),
-          new ActionRowBuilder().addComponents(niveau),
-          new ActionRowBuilder().addComponents(leaderboard),
-          new ActionRowBuilder().addComponents(pov)
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("age")
+              .setLabel("Ton âge")
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("dispo")
+              .setLabel("Tes disponibilités")
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("niveau")
+              .setLabel("Ton niveau / expérience")
+              .setStyle(TextInputStyle.Paragraph)
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("leaderboard")
+              .setLabel("Ton leaderboard")
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("pov")
+              .setLabel("POV / liens Medal")
+              .setStyle(TextInputStyle.Paragraph)
+              .setRequired(true)
+          )
         );
 
         return interaction.showModal(modal);
       }
 
       if (interaction.customId.startsWith("open_giveaway_modal_")) {
-
-        const ownerId =
-          interaction.customId.replace(
-            "open_giveaway_modal_",
-            ""
-          );
+        const ownerId = interaction.customId.replace("open_giveaway_modal_", "");
 
         if (interaction.user.id !== ownerId) {
-
-          return interaction.reply({
-            content: "❌ Ce bouton n’est pas pour toi.",
-            ephemeral: true
-          });
+          return interaction.reply({ content: "❌ Ce bouton n’est pas pour toi.", ephemeral: true });
         }
 
         if (!canCreateGiveaway(interaction.member)) {
-
-          return interaction.reply({
-            content: "❌ Permission refusée.",
-            ephemeral: true
-          });
+          return interaction.reply({ content: "❌ Permission refusée.", ephemeral: true });
         }
 
-        const modal =
-          new ModalBuilder()
-            .setCustomId(`giveaway_create_${ownerId}`)
-            .setTitle("Créer un giveaway");
-
-        const endDate =
-          new TextInputBuilder()
-            .setCustomId("endDate")
-            .setLabel("Date de fin")
-            .setPlaceholder("2026-05-30 20:00")
-            .setStyle(TextInputStyle.Short);
-
-        const winners =
-          new TextInputBuilder()
-            .setCustomId("winners")
-            .setLabel("Nombre de gagnants")
-            .setPlaceholder("1")
-            .setStyle(TextInputStyle.Short);
-
-        const prize =
-          new TextInputBuilder()
-            .setCustomId("prize")
-            .setLabel("Lot à gagner")
-            .setPlaceholder("Nitro")
-            .setStyle(TextInputStyle.Short);
-
-        const description =
-          new TextInputBuilder()
-            .setCustomId("description")
-            .setLabel("Description")
-            .setPlaceholder("Giveaway Frozen")
-            .setStyle(TextInputStyle.Paragraph);
+        const modal = new ModalBuilder()
+          .setCustomId(`giveaway_create_${ownerId}`)
+          .setTitle("Créer un giveaway");
 
         modal.addComponents(
-          new ActionRowBuilder().addComponents(endDate),
-          new ActionRowBuilder().addComponents(winners),
-          new ActionRowBuilder().addComponents(prize),
-          new ActionRowBuilder().addComponents(description)
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("endDate")
+              .setLabel("Date de fin")
+              .setPlaceholder("2026-05-30T20:00")
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("winners")
+              .setLabel("Nombre de gagnants")
+              .setPlaceholder("1")
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("prize")
+              .setLabel("Lot à gagner")
+              .setPlaceholder("Nitro")
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("description")
+              .setLabel("Description")
+              .setPlaceholder("Giveaway Frozen")
+              .setStyle(TextInputStyle.Paragraph)
+              .setRequired(false)
+          )
         );
 
         return interaction.showModal(modal);
       }
 
       if (interaction.customId.startsWith("giveaway_join_")) {
-
-        const giveawayId =
-          interaction.customId.replace(
-            "giveaway_join_",
-            ""
-          );
-
+        const giveawayId = interaction.customId.replace("giveaway_join_", "");
         const data = giveaways.get(giveawayId);
 
         if (!data) {
-
-          return interaction.reply({
-            content: "❌ Giveaway terminé.",
-            ephemeral: true
-          });
+          return interaction.reply({ content: "❌ Giveaway terminé.", ephemeral: true });
         }
 
         data.participants.add(interaction.user.id);
@@ -846,77 +767,134 @@ client.on("interactionCreate", async interaction => {
       }
     }
 
-    if (interaction.isModalSubmit() && interaction.customId.startsWith("giveaway_create_")) {
-  const endDateInput = interaction.fields.getTextInputValue("endDate");
-  const winnersInput = interaction.fields.getTextInputValue("winners");
-  const prize = interaction.fields.getTextInputValue("prize");
-  const description = interaction.fields.getTextInputValue("description") || "Bonne chance à tous !";
+    if (interaction.isModalSubmit() && interaction.customId === "recruit_form") {
+      const age = interaction.fields.getTextInputValue("age");
+      const dispo = interaction.fields.getTextInputValue("dispo");
+      const niveau = interaction.fields.getTextInputValue("niveau");
+      const leaderboard = interaction.fields.getTextInputValue("leaderboard");
+      const pov = interaction.fields.getTextInputValue("pov");
 
-  const endDate = new Date(endDateInput);
+      const embed = makeEmbed(
+        "📋 Formulaire recrutement",
+        [
+          `Candidat : ${interaction.user}`,
+          "",
+          `**Âge :** ${age}`,
+          `**Disponibilités :** ${dispo}`,
+          `**Niveau / expérience :** ${niveau}`,
+          `**Leaderboard :** ${leaderboard}`,
+          `**POV / liens Medal :** ${pov}`
+        ].join("\n")
+      );
 
-  if (isNaN(endDate.getTime()) || endDate.getTime() <= Date.now()) {
-    return interaction.reply({
-      content: "❌ Date invalide. Utilise ce format : `2026-05-25T20:00`",
-      ephemeral: true
-    });
-  }
+      await interaction.reply({ content: "✅ Formulaire envoyé.", ephemeral: true });
+      await interaction.channel.send({ embeds: [embed] });
 
-  const winnersCount = parseInt(winnersInput, 10);
-
-  const giveawayChannel = interaction.guild.channels.cache.get(config.giveaway.channelId);
-  const rolePing = interaction.guild.roles.cache.find(r => r.name === config.giveaway.pingRole);
-  const giveawayId = Date.now().toString();
-
-  const button = new ButtonBuilder()
-    .setCustomId(`giveaway_join_${giveawayId}`)
-    .setLabel("Participer")
-    .setEmoji("🎉")
-    .setStyle(ButtonStyle.Success);
-
-  const msg = await giveawayChannel.send({
-    content: rolePing ? `${rolePing} 🎉 Nouveau giveaway !` : "@everyone 🎉 Nouveau giveaway !",
-    embeds: [makeEmbed("🎉 GIVEAWAY FROZEN", `🎁 **Lot :** ${prize}\n🏆 **Gagnants :** ${winnersCount}\n⏰ **Fin :** <t:${Math.floor(endDate.getTime() / 1000)}:F>\n\n${description}\n\nClique sur 🎉 pour participer.`)],
-    components: [new ActionRowBuilder().addComponents(button)]
-  });
-
-  giveaways.set(giveawayId, {
-    messageId: msg.id,
-    prize,
-    winnersCount,
-    endAt: endDate.getTime(),
-    participants: new Set()
-  });
-
-  await interaction.reply({
-  content: `✅ Giveaway créé.\nID : \`${giveawayId}\``,
-  ephemeral: true
-});
-
-  setTimeout(async () => {
-    const data = giveaways.get(giveawayId);
-    if (!data) return;
-
-    const participants = [...data.participants];
-
-    if (!participants.length) {
-      giveaways.delete(giveawayId);
-      return giveawayChannel.send(`❌ Giveaway terminé : **${prize}**\nAucun participant.`);
+      return;
     }
 
-    const winners = pickWinners(participants, winnersCount);
-    const winnersPing = winners.map(id => `<@${id}>`).join(" ");
+    if (interaction.isModalSubmit() && interaction.customId.startsWith("giveaway_create_")) {
+      const endDateInput = interaction.fields.getTextInputValue("endDate");
+      const winnersInput = interaction.fields.getTextInputValue("winners");
+      const prize = interaction.fields.getTextInputValue("prize");
+      const description = interaction.fields.getTextInputValue("description") || "Bonne chance à tous !";
 
-    await giveawayChannel.send(`🎉 Félicitations ${winnersPing} !\nVous gagnez : **${prize}**`);
+      const endDate = parseGiveawayDate(endDateInput);
 
-    giveaways.delete(giveawayId);
-  }, endDate.getTime() - Date.now());
-}
+      if (!endDate || endDate.getTime() <= Date.now()) {
+        return interaction.reply({
+          content: "❌ Date invalide. Utilise ce format : `2026-05-30T20:00`",
+          ephemeral: true
+        });
+      }
 
-    
+      const winnersCount = parseInt(winnersInput, 10);
+
+      if (isNaN(winnersCount) || winnersCount <= 0) {
+        return interaction.reply({ content: "❌ Nombre de gagnants invalide.", ephemeral: true });
+      }
+
+      const giveawayChannel = interaction.guild.channels.cache.get(config.giveaway.channelId);
+
+      if (!giveawayChannel) {
+        return interaction.reply({ content: "❌ Salon giveaway introuvable.", ephemeral: true });
+      }
+
+      const rolePing = interaction.guild.roles.cache.find(r => r.name === config.giveaway.pingRole);
+      const giveawayId = Date.now().toString();
+
+      const button = new ButtonBuilder()
+        .setCustomId(`giveaway_join_${giveawayId}`)
+        .setLabel("Participer")
+        .setEmoji("🎉")
+        .setStyle(ButtonStyle.Success);
+
+      const msg = await giveawayChannel.send({
+        content: rolePing ? `${rolePing} 🎉 Nouveau giveaway !` : "@everyone 🎉 Nouveau giveaway !",
+        embeds: [
+          makeEmbed(
+            "🎉 GIVEAWAY FROZEN",
+            [
+              `🎁 **Lot :** ${prize}`,
+              `🏆 **Gagnants :** ${winnersCount}`,
+              `⏰ **Fin :** <t:${Math.floor(endDate.getTime() / 1000)}:F>`,
+              `⏳ **Temps restant :** <t:${Math.floor(endDate.getTime() / 1000)}:R>`,
+              "",
+              description,
+              "",
+              "Clique sur 🎉 pour participer."
+            ].join("\n")
+          )
+        ],
+        components: [new ActionRowBuilder().addComponents(button)]
+      });
+
+      giveaways.set(giveawayId, {
+        messageId: msg.id,
+        prize,
+        winnersCount,
+        endAt: endDate.getTime(),
+        participants: new Set()
+      });
+
+      await interaction.reply({
+        content: `✅ Giveaway créé.\nID : \`${giveawayId}\``,
+        ephemeral: true
+      });
+
+      setTimeout(async () => {
+        const data = giveaways.get(giveawayId);
+        if (!data) return;
+
+        const participants = [...data.participants];
+
+        if (!participants.length) {
+          giveaways.delete(giveawayId);
+          return giveawayChannel.send(`❌ Giveaway terminé : **${prize}**\nAucun participant.`);
+        }
+
+        const winners = pickWinners(participants, winnersCount);
+        const winnersPing = winners.map(id => `<@${id}>`).join(" ");
+
+        await giveawayChannel.send(`🎉 Félicitations ${winnersPing} !\nVous gagnez : **${prize}**`);
+
+        giveaways.delete(giveawayId);
+      }, endDate.getTime() - Date.now());
+
+      return;
+    }
   } catch (err) {
     console.error(err);
+
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: "❌ Une erreur est arrivée.",
+        ephemeral: true
+      }).catch(() => {});
+    }
   }
 });
+
 
 client.on("messageCreate", async message => {
   if (message.author.bot || !message.guild) return;
@@ -987,6 +965,28 @@ client.on("messageCreate", async message => {
       content: "🎉 Clique sur le bouton pour ouvrir le menu giveaway.",
       components: [new ActionRowBuilder().addComponents(button)]
     });
+  }
+
+  if (command === "cancelgiveaway") {
+    if (!canCreateGiveaway(message.member)) {
+      return message.reply("❌ Permission refusée.");
+    }
+
+    const giveawayId = args[0];
+
+    if (!giveawayId) {
+      return message.reply("Utilisation : `!cancelgiveaway ID`");
+    }
+
+    const data = giveaways.get(giveawayId);
+
+    if (!data) {
+      return message.reply("❌ Giveaway introuvable.");
+    }
+
+    giveaways.delete(giveawayId);
+
+    return message.reply(`🛑 Giveaway \`${giveawayId}\` annulé.`);
   }
 
   if (command === "clear") {
@@ -1067,29 +1067,7 @@ client.on("messageCreate", async message => {
       ]
     });
   }
-  if (command === "cancelgiveaway") {
 
-    if (!canCreateGiveaway(message.member)) {
-      return message.reply("❌ Permission refusée.");
-    }
-
-    const giveawayId = args[0];
-
-    if (!giveawayId) {
-      return message.reply("Utilisation : `!cancelgiveaway ID`");
-    }
-
-    const data = giveaways.get(giveawayId);
-
-    if (!data) {
-      return message.reply("❌ Giveaway introuvable.");
-    }
-
-    giveaways.delete(giveawayId);
-
-    return message.reply(`🛑 Giveaway \`${giveawayId}\` annulé.`);
-  }
-  
   if (command === "statut") {
     return message.reply({
       embeds: [
