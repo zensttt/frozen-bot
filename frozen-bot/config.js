@@ -11,7 +11,6 @@ module.exports = {
   staffRoles: {
     fondateur: "𝑭𝒐𝒏𝒅𝒂𝒕𝒆𝒖𝒓",
     miniFondateur: "👑𝑴𝒊𝒏𝒊 𝑭𝒐𝒏𝒅𝒂𝒕𝒆𝒖𝒓 👑",
-    gerantRecruteur: "const ticketStaffRole =
   },
 
   recruitmentMessage:
