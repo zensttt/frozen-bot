@@ -77,8 +77,8 @@ function addStaffStat(userId, key) {
   saveStats(data);
 }
 
-function getRole(guild, roleName) {
-  return guild.roles.cache.find(role => role.name === roleName);
+function getRole(guild, roleId) {
+  return guild.roles.cache.get(roleId);
 }
 
 function getStaffRolesArray() {
