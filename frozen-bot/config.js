@@ -11,7 +11,7 @@ module.exports = {
   staffRoles: {
   fondateur: "1416470267143655445",
   miniFondateur: "1504968997358276708",
-  gerantRecruteur: "1416470270411014175"
+  GérantRecruteur: "1416470270411014175"
   },
 
   recruitmentMessage:
