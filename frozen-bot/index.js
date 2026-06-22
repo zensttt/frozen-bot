@@ -93,15 +93,15 @@ function isStaff(member) {
   if (!member || !member.roles) return false;
 
   return member.roles.cache.some(role =>
-    getStaffRolesArray().includes(role.name)
+    getStaffRolesArray().includes(role.id)
   );
 }
 
 function canCreateGiveaway(member) {
   if (!member || !config.giveaway?.allowedRoles) return false;
 
-  return config.giveaway.allowedRoles.some(roleName =>
-    member.roles.cache.some(role => role.name === roleName)
+  return member.roles.cache.some(role =>
+    config.giveaway.allowedRoles.includes(role.id)
   );
 }
 
