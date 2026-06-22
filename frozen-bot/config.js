@@ -9,9 +9,9 @@ module.exports = {
   },
 
   staffRoles: {
-    fondateur: "1416470267143655445",
-    miniFondateur: "1504968997358276708",
-    gérantrecruteur: "1416470270411014175",
+  fondateur: "1416470267143655445",
+  miniFondateur: "1504968997358276708",
+  gerantRecruteur: "1416470270411014175"
   },
 
   recruitmentMessage:
@@ -45,9 +45,9 @@ giveaway: {
   channelId: "1507101073083732078",
 
   allowedRoles: [
-    "1416470267143655445",
-    "1504968997358276708",
-    "1416470270411014175"
+  "1416470267143655445",
+  "1504968997358276708",
+  "1416470270411014175"
   ],
 
   pingRole: "TEAMFRZ"
