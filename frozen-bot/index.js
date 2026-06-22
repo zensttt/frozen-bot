@@ -443,37 +443,25 @@ async function createTicket(
 
   ];
 
-  if (ticketType === "probleme") {
+ const staffRoles = [
+  config.staffRoles.fondateur,
+  config.staffRoles.miniFondateur,
+  config.staffRoles.gerantRecruteur
+];
 
-    if (fondateurRole) {
+for (const roleId of staffRoles) {
+  if (!roleId) continue;
 
-      overwrites.push({
-        id: fondateurRole.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.ManageMessages
-        ]
-      });
-    }
-  }
-
-  else if (ticketType === "recrutement") {
-
-    if (gerantRecruteurRole) {
-
-      overwrites.push({
-        id: gerantRecruteurRole.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.ManageMessages
-        ]
-      });
-    }
-  }
+  overwrites.push({
+    id: roleId,
+    allow: [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.ReadMessageHistory,
+      PermissionFlagsBits.ManageMessages
+    ]
+  });
+}
 
   const safeName =
     member.user.username
@@ -504,14 +492,16 @@ async function createTicket(
 
   if (ticketType === "recrutement") {
 
-    ping =
-      gerantRecruteurRole
-        ? `${gerantRecruteurRole}`
-        : "";
+  ping =
+    [
+      "<@&1416470267143655445>",
+      "<@&1504968997358276708>",
+      "<@&1416470270411014175>"
+    ].join(" ");
 
-    description =
-      `${member}, ton ticket recrutement est ouvert.\n\n${config.recruitmentMessage}`;
-  }
+  description =
+    `${member}, ton ticket recrutement est ouvert.\n\n${config.recruitmentMessage}`;
+}
 
   if (ticketType === "probleme") {
 
